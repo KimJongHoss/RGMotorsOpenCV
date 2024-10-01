@@ -4,6 +4,12 @@ import os
 from time import sleep
 app = Flask(__name__)
 
+global x1
+x1 = 0;
+
+def update_sunData() :
+    return {"id": 1, "coordinate": x1}
+
 
 # 모든 책 목록 조회(GET)
 @app.route('/books1', methods=['GET'])
@@ -13,8 +19,8 @@ def get_books1():
 
 @app.route('/books2', methods=['GET'])
 def get_books2():
-    tracking = []
-    return jsonify(tracking)
+    tracking = update_sunData()
+    return jsonify(tracking), 201
 
 
 
@@ -51,6 +57,8 @@ def delete_books(id):
     return '', 204
 
 def suntracking():
+    global x1 # 전역 변수 x1 사용
+
     print("SUNTRACKING")
     # 비디오 캡처 객체 생성
     cap = cv2.VideoCapture('annesa1.mp4')
@@ -64,8 +72,9 @@ def suntracking():
     os.makedirs(output_folder, exist_ok=True)  # 폴더가 없으면 생성
 
     while cap.isOpened():
+
         sleep(0.01)
-        x1 = 0
+
         ret, frame = cap.read()
         if not ret:
             break
