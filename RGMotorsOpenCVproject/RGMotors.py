@@ -2,7 +2,11 @@ from flask import Flask, jsonify, request
 import cv2
 import os
 from time import sleep
+
 app = Flask(__name__)
+
+# 전역 변수로 x1 값 초기화
+x1 = 0
 
 
 # 모든 책 목록 조회(GET)
@@ -11,11 +15,11 @@ def get_books1():
     suntracking()
     return '', 204
 
+
 @app.route('/books2', methods=['GET'])
 def get_books2():
-    tracking = []
-    return jsonify(tracking)
-
+    global x1  # 전역 변수 사용
+    return jsonify({'x1': x1})  # x1 값을 JSON 형태로 반환
 
 
 # 새로운 책 추가(POST)
@@ -25,7 +29,8 @@ def add_books():
     books.append(new_book)
     return jsonify(new_book), 201
 
-#책 정보 업데이트(PUT)
+
+# 책 정보 업데이트(PUT)
 @app.route('/books/<int:id>', methods=['PUT'])
 def update_books(id):
     # ID로 책 찾기
@@ -34,7 +39,7 @@ def update_books(id):
     if book:
         # 요청 바디에서 JSON 데이터 가져오기
         data = request.get_json()
-        # 책 정보 업데이트a
+        # 책 정보 업데이트
         book.update(data)
         return jsonify(book)
     # 책을 찾지 못한 경우 404 상태 코드 변환
@@ -50,7 +55,9 @@ def delete_books(id):
     # 204 상태 코드 반환 (콘텐츠 없음)
     return '', 204
 
+
 def suntracking():
+    global x1  # 전역 변수 사용
     print("SUNTRACKING")
     # 비디오 캡처 객체 생성
     cap = cv2.VideoCapture('annesa1.mp4')
@@ -65,13 +72,9 @@ def suntracking():
 
     while cap.isOpened():
         sleep(0.01)
-        x1 = 0
         ret, frame = cap.read()
         if not ret:
             break
-        # # 전체 이미지 캡처 및 저장
-        # cv2.imwrite(os.path.join(output_folder, f'{frame_count}.jpg'), frame)  # 특정 폴더에 전체 프레임 저장
-        # frame_count += 1  # 프레임 카운터 증가
 
         # 배경 제거 적용하여 모션 감지
         fgmask = fgbg.apply(frame)
@@ -91,34 +94,32 @@ def suntracking():
             # 객체에 사각형 그리기
             x, y, w, h = cv2.boundingRect(contour)
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+            # x1 값 업데이트
             if 0 <= x < 286:
                 x1 = 1
-
             elif 286 <= x < 572:
                 x1 = 2
-
             elif 572 <= x < 858:
                 x1 = 4
-
             elif 858 <= x < 1144:
                 x1 = 32
-
             else:
                 x1 = 64
-
 
         # 결과 출력
         cv2.imshow('Motion Detection', frame)
         # 전체 이미지 캡처 및 저장
         cv2.imwrite(os.path.join(output_folder, 'captured_image.jpg'), frame)  # 특정 폴더에 전체 프레임 저장
-        # cv2.imwrite(os.path.join(output_folder, f'{frame_count}.jpg'), frame)  # 특정 폴더에 전체 프레임 저장
         frame_count += 1  # 프레임 카운터 증가
+
         # 'q' 키를 누르면 종료
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
     cap.release()
     cv2.destroyAllWindows()
+
 
 if __name__ == '__main__':
     # 디버그 모드로 애플리케이션 실행
